@@ -10,7 +10,7 @@ const Gallery = () => {
   const [imagesData, setImagesData] = useState([]);
   const [quotesData, setQuotesData] = useState([]);
   const [songUrl, setSongUrl] = useState(null); 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(null); // Current index set to null initially
   const [loading, setLoading] = useState(true); 
   const audioRef = useRef(null); 
 
@@ -78,7 +78,6 @@ const Gallery = () => {
 
   useEffect(() => {
     if (songUrl && audioRef.current) {
-      // Attempt to play the audio
       const playAudio = async () => {
         try {
           await audioRef.current.play();
@@ -87,16 +86,16 @@ const Gallery = () => {
         }
       };
 
-      playAudio(); // Try to play immediately
+      playAudio(); 
     }
   }, [songUrl]);
 
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? 0 : prevIndex - 1));
+  const handleImageClick = (index) => {
+    setCurrentIndex(index);
   };
 
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex < imagesData.length - 1 ? prevIndex + 1 : prevIndex));
+  const handleProceedFurther = () => {
+    navigate('/thankyou', { state: { folderPath } });
   };
 
   if (loading) {
@@ -111,50 +110,56 @@ const Gallery = () => {
     <div className="min-h-screen bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-gray-800 p-8 flex flex-col items-center">
       <h2 className="text-4xl font-bold text-center mb-8 text-white">Our Memories</h2>
       
-      <div className="relative w-full max-w-2xl">
-        <motion.div
-          className="overflow-hidden rounded-lg shadow-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <img
-            src={imagesData[currentIndex].src}
-            alt={imagesData[currentIndex].alt}
-            className="w-full h-96 object-contain rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-gray-800"
-          />
-          <p className="p-4 text-center text-lg bg-gray-900 text-white rounded-b-lg">
-            {quotesData[currentIndex]?.text} - <em>{quotesData[currentIndex]?.author}</em>
-          </p>
-        </motion.div>
+      {currentIndex !== null ? (
+        <div className="relative w-full max-w-2xl">
+          <motion.div
+            className="overflow-hidden rounded-lg shadow-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <img
+              src={imagesData[currentIndex].src}
+              alt={imagesData[currentIndex].alt}
+              className="w-full h-96 object-contain rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-gray-800"
+            />
+            <p className="p-4 text-center text-lg bg-gray-900 text-white rounded-b-lg">
+              {quotesData[currentIndex]?.text} - <em>{quotesData[currentIndex]?.author}</em>
+            </p>
+          </motion.div>
 
-        {currentIndex < imagesData.length - 1 ? (
-          <>
-            <button
-              onClick={handlePrev}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-full bg-gray-700 text-white p-3 rounded-full hover:bg-gray-500"
-              style={{ zIndex: 10 }}
-            >
-              &#8592;
-            </button>
-
-            <button
-              onClick={handleNext}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-full bg-gray-700 text-white p-2 rounded-full hover:bg-gray-500"
-              style={{ zIndex: 10 }}
-            >
-              &#8594;
-            </button>
-          </>
-        ) : (
           <button
-            onClick={() => navigate('/thankyou', { state: { folderPath } })}
+            onClick={() => setCurrentIndex(null)}
             className="mt-8 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
           >
-            Proceed Further
+            Back to Gallery
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {imagesData.map((image, index) => (
+            <motion.div
+              key={index}
+              className="overflow-hidden rounded-lg shadow-lg cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => handleImageClick(index)}
+            >
+              <img
+                src={image.src}
+                alt={image.alt}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={handleProceedFurther}
+        className="mt-8 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+      >
+        Proceed Further
+      </button>
 
       {songUrl && (
         <audio ref={audioRef} src={songUrl} loop autoPlay /> 

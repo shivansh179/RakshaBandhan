@@ -6,7 +6,7 @@ import { storage } from '../firebaseconfig';
 
 const Gallery = () => {
   const location = useLocation();
-  const { folderPath, user } = location.state || {};
+  const { folderPath } = location.state || {};
   const [imagesData, setImagesData] = useState([]);
   const [quotesData, setQuotesData] = useState([]);
   const [songUrl, setSongUrl] = useState(null); 
@@ -15,21 +15,20 @@ const Gallery = () => {
   const audioRef = useRef(null); 
 
   const navigate = useNavigate();
-  useEffect(() => {
 
+  useEffect(() => {
     const fetchImages = async () => {
       try {
         const storageRef = ref(storage, `${folderPath}/`);
         const result = await listAll(storageRef);
         const urls = await Promise.all(result.items.map(item => getDownloadURL(item)));
   
-        const imageData = urls.map((url, index) => ({
+        const preloadedImages = urls.map((url, index) => ({
           src: url,
           alt: `Memory ${index + 1}`
         }));
   
-        setImagesData(imageData);
-        console.log('Fetched Images:', imageData); 
+        setImagesData(preloadedImages);
       } catch (error) {
         console.error("Error fetching images from Firebase Storage:", error);
       }
@@ -40,7 +39,6 @@ const Gallery = () => {
         const response = await fetch(`/quotes/${folderPath.toLowerCase()}.json`);
         const data = await response.json();
         setQuotesData(data);
-        console.log('Fetched Quotes:', data); 
       } catch (error) {
         console.error("Error fetching quotes data:", error);
       }
@@ -51,7 +49,6 @@ const Gallery = () => {
         const songRef = ref(storage, `Song/Meri Behna(PagalWorld.com.sb).mp3`);
         const url = await getDownloadURL(songRef);
         setSongUrl(url); 
-        console.log('Fetched Song URL:', url);
       } catch (error) {
         console.error("Error fetching song from Firebase Storage:", error);
       }
@@ -59,12 +56,19 @@ const Gallery = () => {
 
     const fetchData = async () => {
       setLoading(true);
-      await fetchImages();
-      await fetchQuotes();
-      await fetchSong();
-      setLoading(false);
+      try {
+        await Promise.all([
+          fetchImages(),
+          fetchQuotes(),
+          fetchSong(),
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-  
+    
     if (folderPath) {
       fetchData();
     } else {
@@ -74,7 +78,16 @@ const Gallery = () => {
 
   useEffect(() => {
     if (songUrl && audioRef.current) {
-      audioRef.current.play(); 
+      // Attempt to play the audio
+      const playAudio = async () => {
+        try {
+          await audioRef.current.play();
+        } catch (error) {
+          console.log("Autoplay was prevented. Waiting for user interaction to play audio.");
+        }
+      };
+
+      playAudio(); // Try to play immediately
     }
   }, [songUrl]);
 
@@ -83,12 +96,7 @@ const Gallery = () => {
   };
 
   const handleNext = () => {
-    setCurrentIndex((prevIndex) => {
-      if (prevIndex < imagesData.length - 1) {
-        return prevIndex + 1;
-      }
-      return prevIndex;
-    });
+    setCurrentIndex((prevIndex) => (prevIndex < imagesData.length - 1 ? prevIndex + 1 : prevIndex));
   };
 
   if (loading) {
@@ -149,7 +157,7 @@ const Gallery = () => {
       </div>
 
       {songUrl && (
-        <audio ref={audioRef} src={songUrl} loop /> 
+        <audio ref={audioRef} src={songUrl} loop autoPlay /> 
       )}
     </div>
   );

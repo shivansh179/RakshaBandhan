@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ref, getDownloadURL, listAll } from "firebase/storage";
 import { storage } from '../firebaseconfig';  
 
-const Gallery = () => {
-  const location = useLocation();
-  const { folderPath } = location.state || {};
+const Gallery = ({ user }) => {  // Pass the user as a prop
   const [imagesData, setImagesData] = useState([]);
   const [quotesData, setQuotesData] = useState([]);
   const [songUrl, setSongUrl] = useState(null); 
-  const [currentIndex, setCurrentIndex] = useState(null); // Current index set to null initially
+  const [currentIndex, setCurrentIndex] = useState(null);
   const [loading, setLoading] = useState(true); 
   const audioRef = useRef(null); 
 
   const navigate = useNavigate();
+
+  const folderPath = user === "Manya" ? "Manya" : "Pari"; // Determine folder path based on user
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -106,6 +106,8 @@ const Gallery = () => {
     return <p>No images or quotes found.</p>;
   }
 
+  const isLastImage = currentIndex === imagesData.length - 1;
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-gray-800 p-8 flex flex-col items-center">
       <h2 className="text-4xl font-bold text-center mb-8 text-white">Our Memories</h2>
@@ -134,6 +136,15 @@ const Gallery = () => {
           >
             Back to Gallery
           </button>
+
+          {isLastImage && (
+            <button
+              onClick={handleProceedFurther}
+              className="mt-4 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+            >
+              Proceed Further
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -153,13 +164,6 @@ const Gallery = () => {
           ))}
         </div>
       )}
-
-      <button
-        onClick={handleProceedFurther}
-        className="mt-8 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-      >
-        Proceed Further
-      </button>
 
       {songUrl && (
         <audio ref={audioRef} src={songUrl} loop autoPlay /> 
